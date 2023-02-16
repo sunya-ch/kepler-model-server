@@ -18,6 +18,9 @@ node_query_suffix = "joules_total"
 container_id_cols = ["container_name", "container_namespace"]
 container_id_colname = "id"
 
+node_info_query = "kepler_node_nodeInfo"
+UNKNOWN_NODE_INFO = -1
+
 def feature_to_query(feature):
     return "{}_{}_{}".format(container_query_prefix, feature, container_query_suffix)
 
@@ -29,7 +32,6 @@ def component_to_col(component, unit_col=None, unit_val=None):
     if unit_col is None:
         return power_colname
     return "{}_{}_{}".format(unit_col, unit_val, power_colname)
-
 
 class Extractor(metaclass=ABCMeta):
     # isolation abstract: should return dataFrame of features and labels
@@ -102,7 +104,14 @@ class DefaultExtractor(Extractor):
         power_data.fillna(0, inplace=True)
         return power_data
 
+    def get_system_category(self, query_results):
+        node_info_data = None
+        if node_info_query in query_results:
+            node_info_data = query_results[node_info_query][[TIMESTAMP_COL, node_info_query]].set_index(TIMESTAMP_COL)
+        return node_info_data
+
     def extract(self, query_results, energy_components, feature_group, energy_source, node_level=False):
+        print(query_results.keys())
         power_data = self.get_power_data(query_results, energy_components, energy_source)
         if power_data is None:
             return None
@@ -113,5 +122,13 @@ class DefaultExtractor(Extractor):
         if node_level:
             # combined all containers
             feature_data = feature_data.groupby([TIMESTAMP_COL]).sum()[features]
-        return  pd.concat([feature_data, power_data], axis=1).sort_index().dropna()
+        feature_power_data = pd.concat([feature_data, power_data], axis=1).sort_index().dropna()
+        
+        node_info_data = self.get_system_category(query_results)
+        print(node_info_data)
+        if node_info_data is None:
+            feature_power_data[node_info_query] = UNKNOWN_NODE_INFO
+        else:
+            feature_power_data = feature_power_data.join(node_info_data)
+        return  feature_power_data
 

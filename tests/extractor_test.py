@@ -40,7 +40,7 @@ if __name__ == '__main__':
     for extractor in test_extractors:
         extractor_instance = extractor()
         extracted_data = extractor_instance.extract(query_results, energy_components, feature_group, energy_source, node_level=True)
-        expected_col_size = len(energy_components) * num_of_package + len(FeatureGroups[FeatureGroup[feature_group]])
+        expected_col_size = len(energy_components) * num_of_package + len(FeatureGroups[FeatureGroup[feature_group]]) + 1 
         print(extracted_data)
         assert len(extracted_data.columns) == expected_col_size, "Unmatched columns: expected {}, got {}".format(expected_col_size, len(extracted_data.columns))
         
