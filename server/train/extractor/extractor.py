@@ -2,7 +2,7 @@ import os
 import sys
 import pandas as pd
 
-prom_path = os.path.join(os.path.dirname(__file__), '../../../prom')
+prom_path = os.path.join(os.path.dirname(__file__), '../../../../prom')
 sys.path.append(prom_path)
 
 from abc import ABCMeta, abstractmethod
@@ -18,6 +18,10 @@ node_query_suffix = "joules_total"
 container_id_cols = ["container_name", "container_namespace"]
 container_id_colname = "id"
 
+node_info_query = "kepler_node_nodeInfo"
+node_info_column = "node_type"
+UNKNOWN_NODE_INFO = -1
+
 def feature_to_query(feature):
     return "{}_{}_{}".format(container_query_prefix, feature, container_query_suffix)
 
@@ -30,7 +34,6 @@ def component_to_col(component, unit_col=None, unit_val=None):
         return power_colname
     return "{}_{}_{}".format(unit_col, unit_val, power_colname)
 
-
 class Extractor(metaclass=ABCMeta):
     # isolation abstract: should return dataFrame of features and labels
     @abstractmethod
@@ -38,6 +41,9 @@ class Extractor(metaclass=ABCMeta):
         return NotImplemented
 
 # extract data from query 
+# for node-level
+# return DataFrame (index=timestamp, column=[features][power columns][node_type]), power_columns
+
 class DefaultExtractor(Extractor):
 
     def get_feature_data(self, query_results, features):
@@ -46,7 +52,7 @@ class DefaultExtractor(Extractor):
             query = feature_to_query(feature)
             if query not in query_results:
                 return None
-            aggr_query_data = query_results[query]
+            aggr_query_data = query_results[query].copy()
             aggr_query_data.rename(columns={query: feature}, inplace=True)
             aggr_query_data[container_id_colname] = aggr_query_data[container_id_cols].apply(lambda x: '/'.join(x), axis=1)
             aggr_query_data.set_index([TIMESTAMP_COL, container_id_colname], inplace=True)
@@ -69,7 +75,7 @@ class DefaultExtractor(Extractor):
             query = energy_component_to_query(component)
             if query not in query_results:
                 return None
-            aggr_query_data = query_results[query]
+            aggr_query_data = query_results[query].copy()
             # filter source
             aggr_query_data = aggr_query_data[aggr_query_data[SOURCE_COL] == source]
             if unit_col is not None:
@@ -102,16 +108,32 @@ class DefaultExtractor(Extractor):
         power_data.fillna(0, inplace=True)
         return power_data
 
-    def extract(self, query_results, energy_components, feature_group, energy_source, node_level=False):
+    def get_system_category(self, query_results):
+        node_info_data = None
+        if node_info_query in query_results:
+            node_info_data = query_results[node_info_query][[TIMESTAMP_COL, node_info_query]].set_index(TIMESTAMP_COL)
+            node_info_data.rename(columns={node_info_query: node_info_column}, inplace=True)
+        return node_info_data
+
+    def extract(self, query_results, energy_components, feature_group, energy_source, node_level, aggr=True):
         power_data = self.get_power_data(query_results, energy_components, energy_source)
         if power_data is None:
             return None
+        power_columns = power_data.columns
         features = FeatureGroups[FeatureGroup[feature_group]]
         feature_data = self.get_feature_data(query_results, features)
         if feature_data is None:
             return None
-        if node_level:
-            # combined all containers
+        if node_level and aggr:
+            # sum stat of all containers
             feature_data = feature_data.groupby([TIMESTAMP_COL]).sum()[features]
-        return  pd.concat([feature_data, power_data], axis=1).sort_index().dropna()
+        else:
+            feature_data = feature_data.groupby([TIMESTAMP_COL, container_id_colname]).sum()[features]
+        feature_power_data = feature_data.join(power_data).sort_index().dropna()
+        node_info_data = self.get_system_category(query_results)
+        if node_info_data is None:
+            feature_power_data[node_info_column] = UNKNOWN_NODE_INFO
+        else:
+            feature_power_data = feature_power_data.join(node_info_data)
+        return  feature_power_data, power_columns
 
