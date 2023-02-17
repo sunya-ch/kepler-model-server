@@ -6,7 +6,8 @@ server_path = os.path.join(os.path.dirname(__file__), '..')
 sys.path.append(server_path)
 
 from abc import ABCMeta, abstractmethod
-from extractor.extractor import container_id_colname, TIMESTAMP_COL
+from extractor.extractor import container_id_colname, TIMESTAMP_COL, col_to_component, node_info_column
+from train_types import PowerSourceMap
 
 container_indexes = [TIMESTAMP_COL, container_id_colname]
 
@@ -24,19 +25,41 @@ def exclude_target_container_usage(data, target_container_id):
     return target_container_data, conditional_data
 
 class MinIdleIsolator(Isolator):
-    def isolate(self, data, label_cols, *args):
+    def isolate(self, data, energy_source, label_cols):
         isolated_data = data.copy()
         for label_col in label_cols:
             min = data[label_col].min()
             isolated_data[label_col] = data[label_col] - min
         return isolated_data
 
+import numpy as np
+
+system_process_id = "system_processes/system"
+
 class ProfileBackgroundIsolator(Isolator):
-    def isolate(self, data, label_cols, *args):
-        target_container_id = args[0]
-        indexed_data = data.set_index(container_indexes)
-        isolated_data, _ = exclude_target_container_usage(indexed_data, target_container_id)
-        profiles = args[0:len(label_cols)]
-        for i in range(0, len(label_cols)):
-            isolated_data[label_cols[i]] -= profiles[i] 
-        return isolated_data
+    def __init__(self, profiles):
+        self.profiles = profiles
+
+    def transform_profile(self, node_type, energy_source, component):
+        if node_type not in self.profiles:
+            return np.nan    
+        return self.profiles[node_type].get_background_power(energy_source, component)
+
+    def transform_component(self, label_col):
+        return col_to_component(label_col)
+
+    def isolate(self, data, energy_source, label_cols):
+        isolated_data = data.copy()
+        # filter system process
+        isolated_data = isolated_data[isolated_data[container_id_colname]!=system_process_id]
+        try:
+            for label_col in label_cols:
+                component = col_to_component(label_col)
+                profile_values = isolated_data[node_info_column].transform(self.transform_profile, energy_source=energy_source, component=component)
+                if profile_values.isnull().values.any():
+                    return None
+                isolated_data[label_col] = data[label_col] - profile_values
+            return isolated_data
+        except Exception as e:
+            print(e)
+            return None

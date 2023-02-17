@@ -49,17 +49,19 @@ def is_valid_model(metadata, filters):
                 return False
     return True
 
+def get_model_name(trainer_name, node_type):
+    return "{}_{}".format(trainer_name, node_type)
 
-def get_save_path(group_path, model_name):
-    return os.path.join(group_path, model_name)
+def get_save_path(group_path, trainer_name, node_type="0"):
+    return os.path.join(group_path, get_model_name(trainer_name, node_type))
 
-def get_archived_file(group_path, model_name):
-    save_path = get_save_path(group_path, model_name)
+def get_archived_file(group_path, trainer_name, node_type="0"):
+    save_path = get_save_path(group_path, trainer_name, node_type)
     return save_path + '.zip'
 
 # model file must be save in json
-def get_model_weight(group_path, model_name, model_file):
-    save_path = get_save_path(group_path, model_name)
+def get_model_weight(group_path, trainer_name, model_file, node_type="0"):
+    save_path = get_save_path(group_path, trainer_name, node_type)
     return load_json(save_path, model_file)
 
 def download_and_save(url, filepath):

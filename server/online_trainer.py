@@ -17,39 +17,45 @@ SAMPLING_INTERVAL = PROM_QUERY_INTERVAL
 SAMPLING_INTERVAL = getConfig('SAMPLING_INTERVAL', SAMPLING_INTERVAL)
 SAMPLING_INTERVAL = int(SAMPLING_INTERVAL)
 
-pipeline_names = ['KerasFullPipeline']
-grouped_pipelines = dict()
+from train import NewPipeline, PowerSourceMap, FeatureGroups, load_class, load_all_profiles, DefaultExtractor, MinIdleIsolator, ProfileIsolator
 
-for pipeline_name in pipeline_names:
-    pipeline_path = os.path.join(os.path.dirname(__file__), 'train/pipelines/{}'.format(pipeline_name))
-    sys.path.append(pipeline_path)
-    import importlib
-    pipeline_module = importlib.import_module('train.pipelines.{}.pipe'.format(pipeline_name))
-    pipeline = getattr(pipeline_module, pipeline_name)()
-    output_type = pipeline.output_type.name
-    if output_type not in grouped_pipelines:
-        grouped_pipelines[output_type] = []
-    grouped_pipelines[output_type] += [pipeline]
+default_trainers = ['GradientBoostingRegressorTrainer']
+abs_trainer_names = default_trainers + []
+dyn_trainer_names = default_trainers + []
 
-def run_train(pipeline, prom_client):
-    pipeline.train(prom_client)
+def initial_trainers(profiles, trainer_names, node_level):
+    trainers = []
+    for energy_source, energy_components in PowerSourceMap.items():
+        for feature_group in FeatureGroups.Keys():
+            for trainer_name in trainer_names:
+                trainer_class = load_class("trainer", trainer_name)
+                trainer = trainer_class(profiles, energy_components, feature_group.name, energy_source, node_level)
+                trainers += [trainer]
+    return trainers
 
-from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures import wait
+def initial_pipelines():
+    profiles = load_all_profiles()
+    pipeline_name = "DefaultPipeline"
+    abs_trainers = initial_trainers(profiles, abs_trainer_names, node_level=True)
+    dyn_trainers = initial_trainers(profiles, dyn_trainer_names, node_level=False)
+    trainers = abs_trainers + dyn_trainers
+    profile_pipeline = NewPipeline(pipeline_name, trainers, extractor=DefaultExtractor(), isolator=ProfileIsolator(profiles))
+    non_profile_pipeline = NewPipeline(pipeline_name, trainers, extractor=DefaultExtractor(), isolator=MinIdleIsolator())
+    return profile_pipeline, non_profile_pipeline
+
+profile_pipeline, non_profile_pipeline = initial_pipelines()
 
 if __name__ == '__main__':
     prom_client = PrometheusClient()
     while True:
         prom_client.query()
+        query_results = prom_client.snapshot_query_result()
 
-        # start the thread pool
-        with ThreadPoolExecutor(2) as executor:
-            futures = []
-            for output_type, pipelines in grouped_pipelines.items():
-                for pipeline in pipelines:
-                    future = executor.submit(run_train, pipeline, prom_client)
-                    futures += [future]
-            print('Waiting for tasks to complete...')
-            wait(futures)
-            print('All trained!')
+        for energy_source, energy_components in PowerSourceMap.items():
+            for feature_group in FeatureGroups.Keys():
+                success, _, _ = profile_pipeline.process(query_results, energy_components, feature_group, energy_source)
+                if not success:
+                    # failed to process with profile, try non_profile pipeline
+                    non_profile_pipeline.process(query_results, energy_components, feature_group, energy_source)
+
         time.sleep(SAMPLING_INTERVAL)

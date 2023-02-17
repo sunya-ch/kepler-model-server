@@ -20,11 +20,10 @@ BPF_FEATURES = ["cpu_time"]
 KUBELET_FEATURES =['kubelet_memory_bytes', 'kubelet_cpu_usage']
 WORKLOAD_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + IO_FEATURES + BPF_FEATURES + KUBELET_FEATURES
 
-CATEGORICAL_LABEL_TO_VOCAB = {
-                    "cpu_architecture": ["Sandy Bridge", "Ivy Bridge", "Haswell", "Broadwell", "Sky Lake", "Cascade Lake", "Coffee Lake", "Alder Lake"] 
-                    }
-
-NODE_STAT_POWER_LABEL = ["energy_in_pkg_joule", "energy_in_core_joule", "energy_in_dram_joule", "energy_in_uncore_joule", "energy_in_gpu_joule", "energy_in_other_joule"]
+PowerSourceMap = {
+    "rapl": ["package", "core", "uncore", "dram"],
+    "acpi": ["platform"]
+}
 
 class FeatureGroup(enum.Enum):
    Full = 1
@@ -37,18 +36,7 @@ class FeatureGroup(enum.Enum):
 
 class ModelOutputType(enum.Enum):
     AbsPower = 1
-    AbsModelWeight = 2
-    AbsComponentPower = 3
-    AbsComponentModelWeight = 4
-    DynPower = 5
-    DynModelWeight = 6
-    DynComponentPower = 7
-    DynComponentModelWeight = 8
-
-CORE_COMPONENT = 'core'
-DRAM_COMPONENT = 'dram'
-
-POWER_COMPONENTS = [CORE_COMPONENT, DRAM_COMPONENT]
+    DynPower = 2
 
 def sort_features(features):
     sorted_features = features.copy()

@@ -1,6 +1,3 @@
-# extractor_test.py
-#   call 
-
 import os
 import sys
 
@@ -11,6 +8,7 @@ sys.path.append(server_path)
 sys.path.append(train_path)
 
 from train import DefaultExtractor, node_info_column, component_to_col, FeatureGroups, FeatureGroup
+from train import load_class
 
 from prom_test import prom_output_path
 
@@ -27,6 +25,10 @@ if not os.path.exists(extractor_output_path):
 expected_power_columns = [component_to_col(component, "package", unit_val) for component in energy_components for unit_val in range(0,4)]
 
 test_extractors = [DefaultExtractor()]
+# Add customize extractor here
+customize_extractors = []
+for extractor_name in customize_extractors:
+    test_extractors += [load_class("extractor", extractor_name)]
 
 import pandas as pd
 

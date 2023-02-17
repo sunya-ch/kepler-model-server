@@ -34,6 +34,9 @@ def component_to_col(component, unit_col=None, unit_val=None):
         return power_colname
     return "{}_{}_{}".format(unit_col, unit_val, power_colname)
 
+def col_to_component(component_col):
+    return component_col.split('_')[-2:][0]
+
 class Extractor(metaclass=ABCMeta):
     # isolation abstract: should return dataFrame of features and labels
     @abstractmethod

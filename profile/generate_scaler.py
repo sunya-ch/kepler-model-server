@@ -4,7 +4,7 @@
 ## generate a scaler for each node type from prom query
 ## 
 ## ./python generate_scaler.py query_output_folder
-## e.g., ./python generate_scaler.py ../tests/prom_output
+## e.g., ./python generate_scaler.py ../tests/data/prom_output
 ##
 ## input must be a query output of loaded state 
 ##
@@ -19,7 +19,7 @@ train_path = os.path.join(os.path.dirname(__file__), '../server/train')
 sys.path.append(server_path)
 sys.path.append(train_path)
 
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 
 from train import DefaultExtractor, node_info_column, FeatureGroups, FeatureGroup, TIMESTAMP_COL
 
@@ -66,7 +66,7 @@ def process(query_path):
             node_types = pd.unique(feature_data[node_info_column])
             # filter and extract features
             x_values = feature_data[feature_data[node_info_column]==node_type][features].values
-            standard_scaler = StandardScaler()
+            standard_scaler = MinMaxScaler()
             standard_scaler.fit(x_values)
             save_scaler(standard_scaler, node_type, feature_group)
 
