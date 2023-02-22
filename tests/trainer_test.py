@@ -1,21 +1,21 @@
 import os
 import sys
 
-server_path = os.path.join(os.path.dirname(__file__), '../server')
-train_path = os.path.join(os.path.dirname(__file__), '../server/train')
+src_path = os.path.join(os.path.dirname(__file__), '../src')
+train_path = os.path.join(os.path.dirname(__file__), '../src/train')
 
-sys.path.append(server_path)
+sys.path.append(src_path)
 sys.path.append(train_path)
 
 from train import load_class, load_all_profiles
 from isolator_test import isolator_output_path
-from extractor_test import extractor_output_path, energy_components, energy_source, feature_group, expected_power_columns, node_info_column
+from extractor_test import extractor_output_path, energy_components, energy_source, expected_power_columns, node_info_column
 
 import pandas as pd
 
-target_suffix = "_False.csv"
+target_suffix = "_True.csv"
 
-trainer_names = ['GradientBoostingRegressorTrainer']
+trainer_names = ['GradientBoostingRegressorTrainer', 'SGDRegressorTrainer']
 
 def read_extractor_results():
     results = dict()
@@ -30,12 +30,13 @@ def read_isolator_results():
     results = dict()
     target_filenames = [ filename for filename in os.listdir(isolator_output_path)]
     for filename in target_filenames:
-        isolator_name = filename.split("_")[0]
+        # isolator_name = filename.split("_")[0]
+        isolator_name = filename[0:len(filename)-4] # remove ".csv"
         filepath = os.path.join(isolator_output_path, filename)
         results[isolator_name] = pd.read_csv(filepath)
     return results
 
-def assert_train(trainer, data):
+def assert_train(trainer, data, energy_components):
     node_types = pd.unique(data[node_info_column])
     for node_type in node_types:
         node_type_filtered_data = data[data[node_info_column] == node_type]
@@ -50,13 +51,21 @@ if __name__ == '__main__':
     isolated_results = read_isolator_results()
     for trainer_name in trainer_names:
         trainer_class = load_class("trainer", trainer_name)
-        node_level = True
-        trainer = trainer_class(profiles, energy_components, feature_group, energy_source, node_level)
-        for result in extractor_results.values():
+
+        for name, result in extractor_results.items():
+            print("Extractor ", name)
+            node_level = True
+            feature_group = name.split('_')[-1]
+            trainer = trainer_class(profiles, energy_components, feature_group, energy_source, node_level)
             trainer.process(result, expected_power_columns)
-            assert_train(trainer, result)
-        node_level = False
-        trainer = trainer_class(profiles, energy_components, feature_group, energy_source, node_level)
-        for result in isolated_results.values():
+            assert_train(trainer, result, energy_components)
+            print(trainer.get_metadata())
+
+        for name, result in isolated_results.items():
+            print("Isolator ", name)
+            node_level = False
+            feature_group = name.split('_')[-1]
+            trainer = trainer_class(profiles, energy_components, feature_group, energy_source, node_level)
             trainer.process(result, expected_power_columns)
-            assert_train(trainer, result)
+            assert_train(trainer, result, energy_components)
+            print(trainer.get_metadata())

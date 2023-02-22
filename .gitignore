@@ -133,8 +133,11 @@ dmypy.json
 .pyre/
 
 tests/download/*
+.DS_Store
 */.DS_Store
 */*/.DS_Store
 */*/*/.DS_Store
+*/*/*/*/.DS_Store
 
-server/train/models
+src/models
+tests/download
