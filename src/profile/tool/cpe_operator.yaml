@@ -823,7 +823,7 @@ spec:
         - name: CLUSTER_ID
           value: docker-desktop
         image: ghcr.io/sunya-ch/cpe-operator:dev
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
             path: /healthz
@@ -890,7 +890,7 @@ spec:
         - name: PUSHGATEWAY_URL
           value: http://pushgateway-prometheus-pushgateway.cpe-monitoring-system.svc.cluster.local:9091
         image: ghcr.io/sunya-ch/cpe-parser:dev
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         name: cpe-parse
         ports:
         - containerPort: 8080

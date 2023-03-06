@@ -16,6 +16,15 @@ if [ -z ${WORKLOAD_NAMESPACE} ]; then
     WORKLOAD_NAMESPACE="default"
 fi
 
+if [ -z ${DB_FORK_REPO_PATH} ]; then
+    DB_FORK_REPO_PATH="../../../kepler-model-db"
+fi
+
+if [ ! -d ${DB_FORK_REPO_PATH} ]; then
+    echo "kepler-model-db must be forked to ${DB_FORK_REPO_PATH} first"
+    exit
+fi
+
 deploy_cpe() {
     kubectl apply -f tool/cpe_operator.yaml
     kubectl rollout status deploy cpe-operator-controller-manager -n cpe-operator-system --timeout 300s
@@ -50,19 +59,17 @@ save() {
     port_forward
     kubectl get benchmark coremark -oyaml > tmp.yaml
     resultId=$(md5sum tmp.yaml|awk '{ print $1 }')
-    resultPath="../../resource/query_response/${resultId}"
+    resultPath="${DB_FORK_REPO_PATH}/query_response/${resultId}"
     mkdir -p ${resultPath}
     mv tmp.yaml "${resultPath}/cr.yaml"
     python3 ./tool/query.py "${resultPath}/cr.yaml"
     kill $(pidof kubectl)
     echo "Results are saved in ${resultPath}"
-    git checkout -b ${resultId}
-    git add ${resultPath}
-    git commit -m "contribute profiling response ${resultId}" -s
+    pushd ${DB_FORK_REPO_PATH};git checkout -b ${resultId};git add query_response/${resultId};git commit -m "contribute profiling response ${resultId}" -s;git log -1 --stat;popd
 }
 
 push() {
-    git push -u origin $(git branch --show-current)
+    pushd ${DB_FORK_REPO_PATH};git push -u origin $(git branch --show-current);popd
 }
 
 cleanup() {
@@ -83,7 +90,26 @@ check_workload() {
     echo "No workload is running in ${WORKLOAD_NAMESPACE}. Ready to run benchmark"
 }
 
+check_prerequisite() {
+    python3 --version
+    # TODO: check required packages in requirements.txt installed
+    git --version
+    kubectl version
+    jq --help > /dev/null
+    echo "jq installed"
+    md5sum --help > /dev/null
+    echo "md5sum installed"
+    pidof > /dev/null
+    echo "pidof installed"
+    if [ $(lsof -i:30090|wc -l) != "0" ]; then
+        lsof -i:30090
+        echo >&2 "Fatal error: port 30090 is not available."
+        exit 2
+    fi
+}
+
 run() {
+    check_prerequisite
     deploy_cpe
     deploy_benchmark_operator
     deploy_benchmark
