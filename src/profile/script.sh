@@ -22,18 +22,35 @@ deploy_cpe() {
     kubectl rollout status deploy cpe-operator-cpe-parser -n cpe-operator-system --timeout 300s
 }
 
-deploy_benchmark_operator() {
-    kubectl apply -f tool/benchmark_operator.yaml
+expect_num() {
+    BENCHMARK=$1
+    BENCHMARK_NS=$2
+    kubectl get benchmark ${BENCHMARK} -n ${BENCHMARK_NS} -oyaml > tmp.yaml
+    BENCHMARK_FILE=tmp.yaml
+    num=$(cat ${BENCHMARK_FILE}|yq ".spec.repetition")
+    if [ -z $num ]; then
+        num=1
+    fi
+
+    for v in $(cat ${BENCHMARK_FILE}|yq eval ".spec.iterationSpec.iterations[].values | length")
+    do
+        ((num *= v))
+    done
+    rm tmp.yaml
+    echo $num
 }
 
 wait_for_complete() {
-    jobCompleted=$(kubectl get benchmark coremark -ojson|jq .status.jobCompleted|tr -d '"')
-    echo "Wait for coremark to be completed"
-    while [ "$jobCompleted" != "12/12" ] ; 
+    BENCHMARK=coremark
+    BENCHMARK_NS=default
+    EXPECT_NUM=$(expect_num ${BENCHMARK} ${BENCHMARK_NS})
+    jobCompleted=$(kubectl get benchmark ${BENCHMARK} -n ${BENCHMARK_NS} -ojson|jq -r .status.jobCompleted)
+    echo "Wait for ${EXPECT_NUM} ${BENCHMARK} jobs to be completed, sleep 1m"
+    while [ "$jobCompleted" != "${EXPECT_NUM}/${EXPECT_NUM}" ] ; 
     do  
         sleep 60
-        echo "Wait for coremark to be completed... $jobCompleted, sleep 1m"
-        jobCompleted=$(kubectl get benchmark coremark -ojson|jq .status.jobCompleted|tr -d '"')
+        echo "Wait for ${BENCHMARK} to be completed... $jobCompleted, sleep 1m"
+        jobCompleted=$(kubectl get benchmark ${BENCHMARK} -n ${BENCHMARK_NS} -ojson|jq -r .status.jobCompleted)
     done
     echo "Benchmark job completed"
 }
@@ -67,7 +84,7 @@ push() {
 
 cleanup() {
     kubectl delete -f tool/benchmark.yaml
-    kubectl delete -f tool/benchmark_operator.yaml
+    kubectl delete benchmarkoperator none -n cpe-operator-system
     kubectl delete -f tool/cpe_operator.yaml
 }
 
@@ -85,7 +102,6 @@ check_workload() {
 
 run() {
     deploy_cpe
-    deploy_benchmark_operator
     deploy_benchmark
     wait_for_complete
     save

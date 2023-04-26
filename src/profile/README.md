@@ -33,10 +33,12 @@
     ```
     The script will
     1. deploy CPE operator
-    2. deploy benchmark operator and benchmark
+    2. deploy benchmark
     3. wait for benchmark to be completed
     4. forward prometheus server and save response query of kepler metrics
     5. clean up CPE and benchmark
+
+    ![](./img/cpe_data_collection.png)
 
     Output will be saved and commit by git in your local.
 4. Check git commit, push to your remote, and make a PR
@@ -44,3 +46,12 @@
    git log 
    ./script.sh push
    ```
+
+## Choice of benchmarking workload
+The default benchmarking workload is [coremark](./tool/benchmark.yaml). Other example benchmarks are as below.
+
+Benchmark Name| Example
+|---|---|
+Coremark|[Full](./tool/config/full/cpe_coremark.yaml), [Quick](./tool/config/quick/cpe_coremark.yaml)
+PARSEC|[Full](./tool/config/full/cpe_parsec.yaml), [Quick](./tool/config/quick/cpe_parsec.yaml)
+Stressng|[Full](./tool/config/full/cpe_stressng.yaml), [Quick](./tool/config/quick/cpe_stressng.yaml)

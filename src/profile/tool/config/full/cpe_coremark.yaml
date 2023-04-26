@@ -20,6 +20,7 @@ spec:
         restartPolicy: Never
   parserKey: coremark
   repetition: 3
+  interval: 30
   iterationSpec:
     iterations:
     - name: thread

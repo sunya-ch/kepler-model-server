@@ -24,7 +24,6 @@ spec:
     iterations:
     - name: thread
       values:
-      - "1"
       - "4"
       - "8"
       - "16"
