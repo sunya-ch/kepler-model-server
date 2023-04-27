@@ -1,0 +1,74 @@
+apiVersion: cpe.cogadvisor.io/v1
+kind: Benchmark
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"cpe.cogadvisor.io/v1","kind":"Benchmark","metadata":{"annotations":{},"name":"coremark","namespace":"default"},"spec":{"benchmarkOperator":{"name":"none","namespace":"cpe-operator-system"},"benchmarkSpec":"backoffLimit: 0\ntemplate:\n  spec:\n    containers:\n      - name: coremark\n        image: {{ .image }}\n        command:\n        - sh\n        - -c\n        - ./coremark-{{ .thread }}thread{{if ne .thread \"1\"}}s{{end}}.exe\n    restartPolicy: Never\n","iterationSpec":{"configurations":[{"name":"image","values":["ghcr.io/sunya-ch/coremark:ubi"]}],"iterations":[{"name":"thread","values":["1"]}],"sequential":true},"parserKey":"coremark","repetition":1}}
+  creationTimestamp: "2023-04-27T06:52:01Z"
+  finalizers:
+  - finalizers.benchmark.cpe.cogadvisor.io
+  generation: 1
+  name: coremark
+  namespace: default
+  resourceVersion: "6610960"
+  uid: 8d374453-1057-4080-ac7c-1a77d94986dc
+spec:
+  benchmarkOperator:
+    name: none
+    namespace: cpe-operator-system
+  benchmarkSpec: |
+    backoffLimit: 0
+    template:
+      spec:
+        containers:
+          - name: coremark
+            image: {{ .image }}
+            command:
+            - sh
+            - -c
+            - ./coremark-{{ .thread }}thread{{if ne .thread "1"}}s{{end}}.exe
+        restartPolicy: Never
+  iterationSpec:
+    configurations:
+    - name: image
+      values:
+      - ghcr.io/sunya-ch/coremark:ubi
+    iterations:
+    - name: thread
+      values:
+      - "1"
+    sequential: true
+  parserKey: coremark
+  repetition: 1
+status:
+  bestResults:
+  - build: init
+    configurations:
+      image: ghcr.io/sunya-ch/coremark:ubi
+    performanceKey: iterations_per_sec
+    performanceValue: "25276.461295"
+    scenarioID: thread=1
+  hash:
+  - build: init
+    hash: "1494354484"
+    iterations:
+      image: ghcr.io/sunya-ch/coremark:ubi
+      thread: "1"
+    run: "0"
+  jobCompleted: 1/1
+  results:
+  - build: init
+    configID: image=ghcr.io/sunya-ch/coremark:ubi
+    configurations:
+      image: ghcr.io/sunya-ch/coremark:ubi
+    repetitions:
+    - job: coremark-cpeh-1494354484
+      parseResult: '{"iterations_per_sec":[25276.461295],"total_sec":[15.825],"total_ticks":[15825]}'
+      performanceKey: iterations_per_sec
+      performanceValue: "25276.461295"
+      pod: coremark-cpeh-1494354484-gctwq
+      pushedTime: 2023-04-27 06:52:30.084828331 +0000 UTC m=+44.920918027
+      run: "0"
+    scenarioID: thread=1
+    scenarios:
+      thread: "1"
