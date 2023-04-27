@@ -4,14 +4,14 @@ metadata:
   annotations:
     kubectl.kubernetes.io/last-applied-configuration: |
       {"apiVersion":"cpe.cogadvisor.io/v1","kind":"Benchmark","metadata":{"annotations":{},"name":"coremark","namespace":"default"},"spec":{"benchmarkOperator":{"name":"none","namespace":"cpe-operator-system"},"benchmarkSpec":"backoffLimit: 0\ntemplate:\n  spec:\n    containers:\n      - name: coremark\n        image: {{ .image }}\n        command:\n        - sh\n        - -c\n        - ./coremark-{{ .thread }}thread{{if ne .thread \"1\"}}s{{end}}.exe\n    restartPolicy: Never\n","iterationSpec":{"configurations":[{"name":"image","values":["ghcr.io/sunya-ch/coremark:ubi"]}],"iterations":[{"name":"thread","values":["1"]}],"sequential":true},"parserKey":"coremark","repetition":1}}
-  creationTimestamp: "2023-04-27T06:36:21Z"
+  creationTimestamp: "2023-04-27T06:40:13Z"
   finalizers:
   - finalizers.benchmark.cpe.cogadvisor.io
   generation: 1
   name: coremark
   namespace: default
-  resourceVersion: "6597531"
-  uid: d1a928d7-edf8-4d6a-8147-ecf7c8a618fe
+  resourceVersion: "6600839"
+  uid: 36452807-bd2b-4cea-9e10-8637cfd44896
 spec:
   benchmarkOperator:
     name: none
@@ -46,7 +46,7 @@ status:
     configurations:
       image: ghcr.io/sunya-ch/coremark:ubi
     performanceKey: iterations_per_sec
-    performanceValue: "25056.376848"
+    performanceValue: "25312.183598"
     scenarioID: thread=1
   hash:
   - build: init
@@ -63,11 +63,11 @@ status:
       image: ghcr.io/sunya-ch/coremark:ubi
     repetitions:
     - job: coremark-cpeh-1494354484
-      parseResult: '{"iterations_per_sec":[25056.376848],"total_sec":[11.973],"total_ticks":[11973]}'
+      parseResult: '{"iterations_per_sec":[25312.183598],"total_sec":[11.852],"total_ticks":[11852]}'
       performanceKey: iterations_per_sec
-      performanceValue: "25056.376848"
-      pod: coremark-cpeh-1494354484-r8t85
-      pushedTime: 2023-04-27 06:36:45.892498255 +0000 UTC m=+760.139018058
+      performanceValue: "25312.183598"
+      pod: coremark-cpeh-1494354484-576rb
+      pushedTime: 2023-04-27 06:40:38.157926769 +0000 UTC m=+40.967162589
       run: "0"
     scenarioID: thread=1
     scenarios:
