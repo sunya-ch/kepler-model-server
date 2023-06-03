@@ -6,7 +6,7 @@ prom_path = os.path.join(os.path.dirname(__file__), '../../../prom')
 sys.path.append(prom_path)
 
 from abc import ABCMeta, abstractmethod
-from prom.query import TIMESTAMP_COL, SOURCE_COL, get_energy_unit
+from prom.prom_query import TIMESTAMP_COL, SOURCE_COL, get_energy_unit
 from train_types import FeatureGroups, FeatureGroup
 
 container_query_prefix = "kepler_container"

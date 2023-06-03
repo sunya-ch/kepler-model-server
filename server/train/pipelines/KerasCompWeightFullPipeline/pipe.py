@@ -16,7 +16,7 @@ from pipe_util import return_model_weights
 from keras.models import load_model
 from keras import backend as K
 
-from prom.query import NODE_STAT_QUERY
+from prom.prom_query import NODE_STAT_QUERY
 
 MODEL_CLASS = 'keras'
 

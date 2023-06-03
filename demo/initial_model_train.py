@@ -1,3 +1,4 @@
+# deprecated
 input_data_folder = "query_data/coremark_4threads_to_32threads_5rep_ondemand_demo"
 
 import os
@@ -16,7 +17,7 @@ sys.path.append(train_path)
 sys.path.append(prom_path)
 
 import pandas as pd
-from prom.query import PrometheusClient, QUERIES
+from prom.prom_query import PrometheusClient, QUERIES
 
 pipeline_names = ['KerasCompFullPipeline']
 grouped_pipelines = dict()

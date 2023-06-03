@@ -1,3 +1,4 @@
+# deprecated
 import os
 import sys
 import time
@@ -12,7 +13,7 @@ sys.path.append(util_path)
 sys.path.append(train_path)
 sys.path.append(prom_path)
 
-from prom.query import PrometheusClient, PROM_QUERY_INTERVAL
+from prom.prom_query import PrometheusClient, PROM_QUERY_INTERVAL
 from util.config import getConfig
 
 SAMPLING_INTERVAL = PROM_QUERY_INTERVAL

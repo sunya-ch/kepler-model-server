@@ -43,7 +43,7 @@ spec:
         - containerPort: 9000
         volumeMounts:
           - name: cfm
-            mountPath: /etc/config
+            mountPath: /etc/kepler/kepler.config
             readOnly: true
 ---
 kind: Service

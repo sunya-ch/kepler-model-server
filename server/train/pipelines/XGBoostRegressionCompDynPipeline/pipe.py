@@ -11,7 +11,7 @@ sys.path.append(prom_path)
 
 from train_types import FeatureGroup, FeatureGroups, EnergyComponentLabelGroups, EnergyComponentLabelGroup, ModelOutputType, XGBoostRegressionTrainType
 from pipe_util import XGBoostRegressionModelGenerationPipeline
-from prom.query import PrometheusClient
+from prom.prom_query import PrometheusClient
 from extractor import DefaultExtractor
 
 

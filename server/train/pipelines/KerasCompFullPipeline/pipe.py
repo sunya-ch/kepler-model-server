@@ -17,7 +17,7 @@ from transformer import KerasFullPipelineFeatureTransformer
 import json
 import pickle
 
-from prom.query import NODE_STAT_QUERY
+from prom.prom_query import NODE_STAT_QUERY
 
 MODEL_CLASS = 'keras'
 

@@ -19,7 +19,7 @@ from keras import backend as K
 import pickle
 
 
-from prom.query import NODE_STAT_QUERY
+from prom.prom_query import NODE_STAT_QUERY
 
 MODEL_CLASS = 'keras'
 FE_FILE = 'merge.pkl'

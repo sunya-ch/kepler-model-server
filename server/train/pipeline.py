@@ -8,7 +8,7 @@ sys.path.append(server_path)
 
 prom_path = os.path.join(os.path.dirname(__file__), '../prom')
 sys.path.append(prom_path)
-from prom.query import PrometheusClient
+from prom.prom_query import PrometheusClient
 
 from abc import ABCMeta, abstractmethod
 from train_types import FeatureGroup, get_feature_group, ModelOutputType, is_weight_output, POWER_COMPONENTS

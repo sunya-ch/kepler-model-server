@@ -138,5 +138,4 @@ tests/download/*
 */*/*/.DS_Store
 
 src/models
-tests/data/extractor_output/*
-tests/data/isolator_output/*
+tests/data/*_output
