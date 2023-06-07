@@ -3,14 +3,16 @@ import json
 
 import os
 import sys
-util_path = os.path.join(os.path.dirname(__file__), '..', 'util')
+
+util_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'util')
 sys.path.append(util_path)
+
 from train_types import WORKLOAD_FEATURES, SYSTEM_FEATURES, ModelOutputType, CATEGORICAL_LABEL_TO_VOCAB
-from estimator import SERVE_SOCKET
+from config import SERVE_SOCKET
 
 trainer_names = ['GradientBoostingRegressorTrainer']
 
-def generate_request(train_name, n=1, metrics=WORKLOAD_FEATURES, system_features=SYSTEM_FEATURES, output_type=ModelOutputType.AbsPower.name):
+def generate_request(train_name, n=1, metrics=WORKLOAD_FEATURES, system_features=SYSTEM_FEATURES, output_type=ModelOutputType.DynPower.name):
     request_json = dict() 
     if train_name is not None:
         request_json['trainer_name'] = train_name
@@ -45,6 +47,8 @@ class Client:
 
 if __name__ == '__main__':
     client = Client(SERVE_SOCKET)
-    request_json = generate_request(trainer_names[0], 2)
+    request_json = generate_request(trainer_names[0], 2, output_type="DynPower")
     res = client.make_request(request_json)
-    print(res)
+    res_json = json.loads(res)
+    assert res_json["msg"]=="", "response error: {}".format(res_json["msg"])
+    assert len(res_json["powers"]) > 0, "zero powers"

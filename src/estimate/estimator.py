@@ -11,8 +11,6 @@ sys.path.append(fpath)
 util_path = os.path.join(os.path.dirname(__file__), '..', 'util')
 sys.path.append(util_path)
 
-SERVE_SOCKET = '/tmp/estimator.sock'
-
 ###############################################
 # power request 
 
@@ -38,7 +36,7 @@ from model_server_connector import ModelOutputType, is_weight_output, make_reque
 from archived_model import get_achived_model
 from model import load_downloaded_model
 from loader import get_download_output_path
-from config import set_env_from_model_config
+from config import set_env_from_model_config, SERVE_SOCKET
 
 loaded_model = dict()
 

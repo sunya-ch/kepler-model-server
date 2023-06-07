@@ -3,7 +3,7 @@ import json
 import joblib
 import pandas as pd
 from saver import assure_path, METADATA_FILENAME, SCALER_FILENAME, WEIGHT_FILENAME
-from train_types import ModelOutputType
+from train_types import ModelOutputType, FeatureGroup
 from urllib.request import urlopen
 
 import requests
@@ -16,6 +16,12 @@ ARRAY_DELIMIT = ','
 DEFAULT_PIPELINE = 'default'
 CHECKPOINT_FOLDERNAME = 'checkpoint'
 DOWNLOAD_FOLDERNAME = 'download'
+
+default_init_model_url = "https://github.com/sunya-ch/kepler-model-db/raw/main/models/"
+default_init_pipeline_name = "trl-nx12_mixed_all_TrainIsoltor"
+default_trainer_name = "GradientBoostingRegressorTrainer"
+default_node_type = "1"
+default_feature_group = FeatureGroup.CgroupOnly
 
 def load_json(path, name):
     if ".json" not in name:
@@ -156,4 +162,7 @@ def get_download_path():
 def get_download_output_path(output_type):
     return os.path.join(get_download_path(), output_type.name)
 
-
+def get_url(output_type, feature_group=default_feature_group, trainer_name=default_trainer_name, node_type=default_node_type, model_topurl=default_init_model_url, energy_source="rapl", pipeline_name=default_init_pipeline_name):
+    group_path = get_model_group_path(model_topurl, output_type=output_type, feature_group=feature_group, energy_source=energy_source, pipeline_name=pipeline_name, assure=False)
+    model_name = get_model_name(trainer_name, node_type)
+    return os.path.join(group_path, model_name + ".zip")

@@ -49,6 +49,9 @@ class ModelOutputType(enum.Enum):
     AbsPower = 1
     DynPower = 2
 
+def is_support_output_type(output_type_name):
+    return any(output_type_name == item.name for item in ModelOutputType)
+
 def deep_sort(elements):
     sorted_elements = elements.copy()
     sorted_elements.sort()

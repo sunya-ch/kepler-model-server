@@ -9,8 +9,8 @@ import codecs
 util_path = os.path.join(os.path.dirname(__file__), '..', 'util')
 sys.path.append(util_path)
 
-from util.config import is_model_server_enabled, get_model_server_req_endpoint, get_model_server_list_endpoint
-from util.loader import get_download_output_path
+from config import is_model_server_enabled, get_model_server_req_endpoint, get_model_server_list_endpoint
+from loader import get_download_output_path
 
 # TO-DO: change to use from util.train_types import ModelOutputType
 

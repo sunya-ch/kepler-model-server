@@ -1,5 +1,5 @@
-from estimator_client import Client
-from estimate_model_test import generate_request, model_names
+from estimator_power_request_test import Client
+from estimator_model_test import generate_request, model_names
 from estimator import SERVE_SOCKET
 import time
 loads = range(10, 11, 10)

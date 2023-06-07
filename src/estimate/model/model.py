@@ -2,8 +2,6 @@ import os
 import sys
 
 import pandas as pd
-import keras
-from keras import backend as K
 
 import json
 
@@ -121,6 +119,7 @@ def load_model(model_path):
     if metadata is not None:
         metadata['model_path'] = model_path
         metadata_str = json.dumps(metadata)
+        print(metadata_str)
         try: 
             model = json.loads(metadata_str, object_hook = lambda d : Model(**d))
             return model

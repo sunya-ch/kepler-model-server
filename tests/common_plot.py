@@ -16,10 +16,8 @@ sys.path.append(src_path)
 #################################################################
 
 from util import assure_path, FeatureGroups, FeatureGroup, PowerSourceMap
-from util.prom_types import feature_to_query, TIMESTAMP_COL
+from util.prom_types import TIMESTAMP_COL
 from util.extract_types import col_to_component
-from util.loader import DEFAULT_PIPELINE
-from estimate_model_test import test_model
 
 from sklearn.preprocessing import MinMaxScaler
 

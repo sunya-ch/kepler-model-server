@@ -13,6 +13,8 @@
 #################################################
 
 import os
+from loader import get_url
+from train_types import ModelOutputType, is_support_output_type
 
 # must be writable (for shared volume mount)
 MNT_PATH = "/mnt"
@@ -41,6 +43,8 @@ MODEL_SERVER_ENDPOINT = 'http://{}:{}'.format(MODEL_SERVER_SVC, DEFAULT_MODEL_SE
 MODEL_SERVER_MODEL_REQ_PATH = "/model"
 MODEL_SERVER_MODEL_LIST_PATH = "/best-models"
 MODEL_SERVER_ENABLE = False
+
+SERVE_SOCKET = '/tmp/estimator.sock'
 
 def getConfig(key, default):
     # check configmap path
@@ -102,12 +106,19 @@ def set_env_from_model_config():
                 os.environ[splits[0]] = splits[1]
                 print("set {} to {}.".format(splits[0], splits[1]))
 
+    
+
 # get_init_model: get initial model from URL if estimator is enabled
 def get_init_model(output_type):
     if output_type in estimatorKeyMap:
-        enabled = getConfig(estimatorKeyMap[output_type], "false").lower() == "true"
+        enabled = getConfig(estimatorKeyMap[output_type], "true").lower() == "true"
         if enabled:
-            return getConfig(initUrlKeyMap[output_type], "")
+            modelURL = getConfig(initUrlKeyMap[output_type], "")
+            if modelURL == "" and is_support_output_type(output_type):
+                return get_url(output_type=ModelOutputType[output_type])
+            else:
+                return modelURL
         else:
             print("{} is not enaled".format(output_type))
     return ""
+

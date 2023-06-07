@@ -27,13 +27,14 @@ sys.path.append(train_path)
 sys.path.append(prom_path)
 sys.path.append(estimate_path)
 
-from util.train_types import FeatureGroups, FeatureGroup, ModelOutputType
-from util.loader import get_download_output_path
-from estimate.estimator_client import generate_request
+from train_types import FeatureGroups, FeatureGroup, ModelOutputType
+from loader import get_download_output_path
 from estimate.estimator import handle_request, loaded_model, PowerRequest
 from estimate.model_server_connector import list_all_models
 from estimate.archived_model import get_achived_model, reset_failed_list
-from config import getConfig, estimatorKeyMap, initUrlKeyMap, set_env_from_model_config
+from config import getConfig, estimatorKeyMap, initUrlKeyMap, set_env_from_model_config, get_url
+
+from estimator_power_request_test import generate_request
 
 os.environ['MODEL_SERVER_URL'] = 'http://localhost:8100'
 
@@ -83,7 +84,7 @@ if __name__ == '__main__':
     # test getting model from archived
     os.environ['MODEL_SERVER_ENABLE'] = "false"
     if len(available_models) == 0:
-        output_type_name = 'DynComponentPower'
+        output_type_name = 'DynPower'
         # enable model to use
         os.environ[estimatorKeyMap[output_type_name]] = "true"
         output_type = ModelOutputType[output_type_name]
@@ -93,7 +94,7 @@ if __name__ == '__main__':
         if os.path.exists(output_path):
             shutil.rmtree(output_path)
         # valid model
-        os.environ[initUrlKeyMap[output_type_name]] = "https://github.com/sustainable-computing-io/kepler-model-server/raw/main/tests/test_models/DynComponentPower/CgroupOnly/ScikitMixed.zip"
+        os.environ[initUrlKeyMap[output_type_name]] = get_url(output_type=output_type, feature_group=FeatureGroup.CgroupOnly)
         request_json = generate_request(None, n=10, metrics=FeatureGroups[FeatureGroup.CgroupOnly], output_type=output_type_name)
         data = json.dumps(request_json)
         output = handle_request(data)
@@ -101,13 +102,13 @@ if __name__ == '__main__':
         print("result {}/{} from static set: {}".format(output_type_name, FeatureGroup.CgroupOnly.name, output))
         del loaded_model[output_type_name]
         # invalid model
-        os.environ[initUrlKeyMap[output_type_name]] = "https://github.com/sustainable-computing-io/kepler-model-server/raw/main/tests/test_models/DynComponentPower/BPFOnly/ScikitMixed.zip"
+        os.environ[initUrlKeyMap[output_type_name]] = get_url(output_type=output_type, feature_group=FeatureGroup.BPFOnly)
         request_json = generate_request(None, n=10, metrics=FeatureGroups[FeatureGroup.CgroupOnly], output_type=output_type_name)
         data = json.dumps(request_json)
         power_request = json.loads(data, object_hook = lambda d : PowerRequest(**d))
         output_path = get_achived_model(power_request)
         assert output_path is None, "model should be invalid\n {}".format(output_path)
-        os.environ['MODEL_CONFIG'] = "CONTAINER_COMPONENTS_ESTIMATOR=true\nCONTAINER_COMPONENTS_INIT_URL=https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-server/main/tests/test_models/DynComponentPower/CgroupOnly/ScikitMixed.zip\n"
+        os.environ['MODEL_CONFIG'] = "CONTAINER_COMPONENTS_ESTIMATOR=true\nCONTAINER_COMPONENTS_INIT_URL={}\n".format(get_url(output_type=output_type, feature_group=FeatureGroup.CgroupOnly))
         set_env_from_model_config()
         reset_failed_list()
         if output_type_name in loaded_model:

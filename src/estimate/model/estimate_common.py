@@ -1,6 +1,15 @@
+keras_enabled = True
+import cpuinfo
 
-import keras
-from keras import backend as K
+cpu_info = cpuinfo.get_cpu_info()
+
+if 'flags' in cpu_info and 'avx' in cpu_info['flags']:
+    import keras
+    from keras import backend as K
+else:
+    print("AVX instructions are not available.")
+    keras_enabled = False
+
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 import os
@@ -34,6 +43,8 @@ def load_model_by_pickle(model_path, model_filename):
     return load_pkl(model_path, model_filename)
 
 def coeff_determination(y_true, y_pred):
+    if not keras_enabled:
+        return None
     SS_res =  K.sum(K.square( y_true-y_pred )) 
     SS_tot = K.sum(K.square( y_true - K.mean(y_true) ) ) 
     return ( 1 - SS_res/(SS_tot + K.epsilon()) )

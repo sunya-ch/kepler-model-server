@@ -6,8 +6,9 @@
 - [Isolator](#isolator)
 - [Trainer](#trainer)
 - [Pipeline](#pipeline)
-- [Estimate Model](#estimate-model)
-- [Estimator Client](#estimator-client)
+- [Estimator Power Prediction](#estimator-power-prediction)
+- [Estimator Model Request (to Model Server)](#estimator-model-request-to-model-server)
+- [Estimator Power Request (from Collector)](#estimator-power-request-from-collector)
 
 <!-- /TOC -->
 
@@ -143,7 +144,7 @@ Optional arguments:
  - abs_trainer_names: list of trainer names to learn for DynPower (default: test_trainer_names)
  - dyn_trainer_names: list of trainer names to learn for AbsPower (default: test_trainer_names)
 
-## Estimate Model
+## Estimator Power Prediction
  The test is for testing applying a trained model to extracted and isolated data for node-level and container-level power, respectively. Prediction error will be printed. 
 
  Requirements:
@@ -160,7 +161,7 @@ Optional arguments:
  from isolator_test import get_isolate_results
  from extractor_test import get_extract_results, get_expected_power_columns
 
- from estimate_model_test import test_model
+ from estimator_model_test import test_model
  
  # model folder under model_toppath which is ../src/models by default
  pipeline_name = DEFAULT_PIPELINE
@@ -182,7 +183,7 @@ Optional arguments:
 Optional arguments:
  - power_range: power range to compute scaled error in percentage
 
-## Estimator Client
+## Estimator Model Request (to Model Server)
 The test is for testing estimator as a client to model server by making a request for best model for a specific feature group and performing a prediction by the loaded model. Output of prediction will be printed. 
 
 Requirements:
@@ -195,5 +196,21 @@ Requirements:
 
 Run:
 ```bash
-python estimator_client_test.py
+python estimator_model_request_test.py
+```
+
+## Estimator Power Request (from Collector)
+The test if for testing estimator as a server to serve a power request from Kepler collector. Response output will be printed
+
+Requirements:
+- model initial url defined in [util/loader.py](../src/util/loader.py) is available.
+- estimator running
+
+    ```bash
+    python ../src/estimate/estimator.py
+    ```
+
+Run:
+```bash
+python estimator_power_request_test.py
 ```
