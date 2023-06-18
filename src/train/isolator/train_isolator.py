@@ -2,25 +2,16 @@ import os
 import sys
 import numpy as np
 
-cur_path = os.path.join(os.path.dirname(__file__), '.')
-sys.path.append(cur_path)
-
 util_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'util')
 sys.path.append(util_path)
-
 estimate_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'estimate')
 sys.path.append(estimate_path)
 
-profile_path = os.path.join(os.path.dirname(__file__), '..', '..', 'profile', 'tool')
-sys.path.append(profile_path)
-
 from isolator import Isolator, isolate_container
-
 from estimate import load_model, get_predicted_power_colname, get_predicted_background_power_colname, get_dynamic_power_colname, get_reconstructed_power_colname, get_label_power_colname, get_background_containers
 from extractor import find_correlations
 from preprocess import get_extracted_power_labels
 
-from profile_background import process as profile_process
 from util import PowerSourceMap
 from util.train_types import get_valid_feature_groups
 from util.prom_types import TIMESTAMP_COL
@@ -119,10 +110,10 @@ def find_best_target_data_with_dyn_power(energy_source, energy_components, extra
     return best_target_data_with_dyn_power, best_background_data_with_prediction
 
 # TO-DO: suppport multiple node types
-class TrainIsoltor(Isolator):
-    def __init__(self, idle_data, abs_pipeline_name=DEFAULT_PIPELINE):
+class TrainIsolator(Isolator):
+    def __init__(self, idle_data, profiler, abs_pipeline_name=DEFAULT_PIPELINE):
         self.idle_data = idle_data
-        self.profiles = profile_process(self.idle_data)
+        self.profiles = profiler.process(self.idle_data)
         self.background_containers = get_background_containers(self.idle_data)
         self.abs_pipeline_name = abs_pipeline_name
 

@@ -18,7 +18,7 @@ CHECKPOINT_FOLDERNAME = 'checkpoint'
 DOWNLOAD_FOLDERNAME = 'download'
 
 default_init_model_url = "https://github.com/sunya-ch/kepler-model-db/raw/main/models/"
-default_init_pipeline_name = "trl-nx12_mixed_all_TrainIsoltor"
+default_init_pipeline_name = "trl-nx12_mixed_all_TrainIsolator"
 default_trainer_name = "GradientBoostingRegressorTrainer"
 default_node_type = "1"
 default_feature_group = FeatureGroup.CgroupOnly
@@ -166,3 +166,15 @@ def get_url(output_type, feature_group=default_feature_group, trainer_name=defau
     group_path = get_model_group_path(model_topurl, output_type=output_type, feature_group=feature_group, energy_source=energy_source, pipeline_name=pipeline_name, assure=False)
     model_name = get_model_name(trainer_name, node_type)
     return os.path.join(group_path, model_name + ".zip")
+
+def query_result_to_dict(query_result):
+    query_result_dict = dict()
+    for query, result in query_result.items():
+        query_result_dict[query] = result.to_dict()
+    return query_result_dict
+
+def query_result_from_dict(query_result_dict):
+    query_result = dict()
+    for query, result in query_result_dict.items():
+        query_result[query] = pd.DataFrame.from_dict(result, orient='index')
+    return query_result

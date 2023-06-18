@@ -4,11 +4,15 @@ import threading
 
 util_path = os.path.join(os.path.dirname(__file__), '..', 'util')
 sys.path.append(util_path)
+extractor_path = os.path.join(os.path.dirname(__file__), 'extractor')
+sys.path.append(extractor_path)
+isolator_path = os.path.join(os.path.dirname(__file__), 'isolator')
+sys.path.append(isolator_path)
 
 from extractor import DefaultExtractor
 from isolator import MinIdleIsolator
 
-from util import PowerSourceMap, FeatureGroups
+from train_types import PowerSourceMap, FeatureGroups
 
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import wait
