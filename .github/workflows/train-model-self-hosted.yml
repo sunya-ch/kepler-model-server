@@ -60,7 +60,7 @@ jobs:
             instance_type: ${{ inputs.instance_type }}
             create_s3_bucket: "false"
             spot_instance_only: "true"
-            root_volume_size: "50"
+            root_volume_size: "100"
 
       - name: Print Output
         id: output
