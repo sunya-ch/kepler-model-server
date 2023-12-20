@@ -108,3 +108,14 @@ patch-power-request-client:
 
 patch-model-request-client:
 	kubectl patch ds kepler-exporter -n kepler --patch-file ./manifests/test/model-request-client.yaml
+
+
+
+# tekton pipeline
+S3_PUSER_IMAGE_NAME := kepler_model_server/s3_pusher
+S3_PUSER_IMAGE ?= $(IMAGE_REGISTRY)/$(S3_PUSER_IMAGE_NAME):v$(IMAGE_VERSION)
+build-pusher:
+	cd model_training/s3-pusher && $(CTR_CMD) build --platform linux/amd64 -t $(S3_PUSER_IMAGE) .
+
+push-pusher:
+	$(CTR_CMD) push $(S3_PUSER_IMAGE)
