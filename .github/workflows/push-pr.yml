@@ -17,6 +17,8 @@ on:
     - '.gitignore'
     - '*.md'
     - '**/*.md'
+    branches-ignore: 
+    - main # remove redundant run from pr
 
 jobs:
   check-branch:
