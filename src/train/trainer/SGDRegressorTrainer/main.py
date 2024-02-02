@@ -1,5 +1,5 @@
 from sklearn.linear_model import SGDRegressor
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MaxAbsScaler
 import joblib
 from urllib.request import urlopen
 
@@ -11,8 +11,8 @@ sys.path.append(trainer_path)
 from trainer.scikit import ScikitTrainer
 
 class SGDRegressorTrainer(ScikitTrainer):
-    def __init__(self, profiles, energy_components, feature_group, energy_source, node_level):
-        super(SGDRegressorTrainer, self).__init__(profiles, energy_components, feature_group, energy_source, node_level, scaler_type="standard")
+    def __init__(self, energy_components, feature_group, energy_source, node_level, pipeline_name):
+        super(SGDRegressorTrainer, self).__init__(energy_components, feature_group, energy_source, node_level, pipeline_name=pipeline_name)
         self.fe_files = []
     
     def init_model(self):

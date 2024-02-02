@@ -1,6 +1,7 @@
 # models
 server/train/local/
 server/models
+*/*/download
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -133,10 +134,16 @@ dmypy.json
 .pyre/
 
 tests/download/*
+.DS_Store
 */.DS_Store
 */*/.DS_Store
 */*/*/.DS_Store
 
 src/models
-tests/data/extractor_output/*
-tests/data/isolator_output/*
+tests/models
+tests/data/extractor_output
+tests/data/isolator_output
+tests/data/offline_trainer_output
+tests/data/plot_output
+model_training/*data*
+model_training/tekton/secret

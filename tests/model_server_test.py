@@ -17,17 +17,14 @@ sys.path.append(server_path)
 
 from train_types import FeatureGroup, FeatureGroups, ModelOutputType
 from model_server import MODEL_SERVER_PORT
-
-from trainer_test import trainer_names
+from config import download_path
 
 def get_model_request_json(metrics, output_type, node_type, weight, trainer_name, energy_source):
     return {"metrics": metrics, "output_type": output_type.name, "node_type": node_type, "weight": weight, "trainer_name": trainer_name, "source": energy_source}
 
 TMP_FILE = 'download.zip'
-DOWNLOAD_FOLDER = 'download'
-download_path = os.path.join(os.path.dirname(__file__), DOWNLOAD_FOLDER)
 
-def make_request(metrics, output_type, node_type=-1, weight=False, trainer_name="", energy_source='rapl'):
+def make_request(metrics, output_type, node_type=-1, weight=False, trainer_name="", energy_source='intel_rapl'):
     model_request = get_model_request_json(metrics, output_type, node_type, weight, trainer_name, energy_source)
     response = requests.post('http://localhost:{}/model'.format(MODEL_SERVER_PORT), json=model_request)
     assert response.status_code == 200, response.text

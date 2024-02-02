@@ -1,52 +1,85 @@
-# Kepler Model Server
+# Kepler Power Model
+[Get started with Kepler Model Server.](https://sustainable-computing.io/kepler_model_server/get_started/)
 
-### Getting Power Models
+This repository contains source code related to Kepler power model. The modules in this repository connects to [core Kepler project](https://github.com/sustainable-computing-io/kepler) and [kepler-model-db](https://github.com/sustainable-computing-io/kepler-model-db) as below.
+![](./fig/comm_diagram.png)
+For more details, check [the component diagram](./fig/model-server-components-simplified.png).
+
+## Model server and estimator deployment 
+
+### Using Kepler Operator
+
+```yaml
+apiVersion: kepler.system.sustainable.computing.io/v1alpha1
+kind: KeplerInternal
+metadata:
+  name: kepler
+spec:
+..
+  modelServer:
+    enabled: <true|false>
+  estimator:
+    node:
+      components:
+        sidecar: <true|false>
+        initUrl: <static model URL>
+      total:
+        sidecar: <true|false>
+        initUrl: <static model URL>
 ```
-/model
-POST
+
+### Using manifests with setup script:
+Deploy with estimator sidecar
+```sh
+OPTS="ESTIMATOR" make deploy
 ```
 
-Parameters
-|key|value|description
-|---|---|---|
-|metrics|list of string|list of available input features (measured metrics)*
-|output_type|either of the following values: *AbsPower*, *AbsModelWeight*, *AbsComponentPower*, *AbsComponentModelWeight*, *DynPower*,  *DynModelWeight*, *DynComponentPower*, *DynComponentModelWeight*|the requested model kinds and forms \**
-model_name (optional)|string|fixed pipeline name* (auto-select the model with lowest error if not specified)
-filters (optional)|string|expression in the form *attribute1*:*threshold1*; *attribute2*:*threshold2*
-
-\* refer to pipeline and features definitions in [here](./doc/train_pipeline.md)
-
-\** refer to power model choices described [here](#power-models)
-
-#### Available model training pipelines
-##### AbsPower
-|Pipeline Name|Learning Approach|Features|Online|
-|---|---|---|---|
-|KerasFullPipeline|Single-layer Linear Regression with Adam optimizer (learning_rate=0.5), loss='mae'|Full|:heavy_check_mark:
-
-##### AbsModelWeight (WIP)
-
-##### AbsComponentPower (core,dram)
-|Pipeline Name|Learning Approach|Features|Online|
-|---|---|---|---|
-|KerasCompFullPipeline|Single-layer Linear Regression with Adam optimizer (learning_rate=0.01), loss='mae'|Full|:heavy_check_mark:
-
-##### AbsComponentModelWeight (core, dram)
-|Pipeline Name|Learning Approach|Features|Online|
-|---|---|---|---|
-|KerasCompWeightFullPipeline|Single-layer Linear Regression with Adam optimizer (learning_rate=0.01), loss='mae'|Full|:heavy_check_mark:
-
-##### DynPower 
-|Pipeline Name|Learning Approach|Features|Online|
-|---|---|---|---|
-ScikitMixed|Gradient Boosting Regressor|Full, Cgroup|x|
-
-
-### Posting Model Weights [WIP]
+Deploy with estimator sidecar and model server 
+```sh
+OPTS="ESTIMATOR SERVER" make deploy
 ```
-/metrics
-GET
-```
+
+## Model Training
+- [Use Tekton pipeline](./model_training/tekton/README.md)
+- [Use Bash script with CPE operator](./model_training/cpe_script_instruction.md)
+
+## Local test
+### via docker
+1. Build image for testing, run 
+    ```sh
+    make build-test
+    ```
+
+2. Run the test
+
+    |Test case|Command|
+    |---|---|
+    |[Training pipeline](./tests/README.md#pipeline)|make test-pipeline|
+    |[Model server](./tests/README.md#estimator-model-request-to-model-server)|make test-model-server|
+    |[Estimator](./tests/README.md#estimator-power-request-from-collector)|make test-estimator|
+    |[Offline Trainer](./tests/README.md#offline-trainer)|make test-offline-trainer|
+
+    For more test information, check [here](./tests/).
+
+### with native python environment
+Compatible version: python 3.8
+
+1. Prepare environment
+
+    ```bash
+    pip install -r ../dockerfiles/requirements.txt
+    ```
+
+2. Run the test
+
+    |Test case|Command|
+    |---|---|
+    |[Training pipeline](./tests/README.md#pipeline)|python -u ./tests/pipeline_test.py|
+    |[Model server](./tests/README.md#estimator-model-request-to-model-server)|Terminal 1: python src/server/model_server.py <br>Terminal 2: python -u tests/estimator_model_request_test.py|
+    |[Estimator](./tests/README.md#estimator-power-request-from-collector)|Terminal 1: python src/estimate/estimator.py<br>Terminal 2: python -u tests/estimator_power_request_test.py|
+    |[Offline Trainer](./tests/README.md#offline-trainer)|Terminal 1: python src/train/offline_trainer.py<br>Terminal 2: python -u tests/offline_trainer_test.py|
+
+    For more test information, check [here](./tests/).
 
 ### Contributing
 Please check the roadmap and guidelines to join us [here](./contributing.md).

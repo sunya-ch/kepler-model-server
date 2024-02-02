@@ -10,35 +10,65 @@
 
 import enum
 import random
+from typing import List
 
-SYSTEM_FEATURES = ["nodeInfo", "cpu_scaling_frequency_hertz"]
+SYSTEM_FEATURES = ["node_info", "cpu_scaling_frequency_hertz"]
 
 COUNTER_FEAUTRES = ["cache_miss", "cpu_cycles", "cpu_instructions"]
 CGROUP_FEATURES = ["cgroupfs_cpu_usage_us", "cgroupfs_memory_usage_bytes", "cgroupfs_system_cpu_usage_us", "cgroupfs_user_cpu_usage_us"]
-BPF_FEATURES = ["bpf_cpu_time_us"]
+BPF_FEATURES = ["bpf_cpu_time_ms", "bpf_page_cache_hit"]
 IRQ_FEATURES = ["bpf_block_irq", "bpf_net_rx_irq", "bpf_net_tx_irq"]
-KUBELET_FEATURES =['kubelet_memory_bytes', 'kubelet_cpu_usage']
-WORKLOAD_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + BPF_FEATURES + IRQ_FEATURES + KUBELET_FEATURES
+ACCELERATE_FEATURES = ['accelerator_intel_qat']
+WORKLOAD_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + BPF_FEATURES + IRQ_FEATURES + ACCELERATE_FEATURES
+BASIC_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + BPF_FEATURES 
 
 PowerSourceMap = {
-    "rapl": ["package", "core", "uncore", "dram"],
+    "intel_rapl": ["package", "core", "uncore", "dram"],
     "acpi": ["platform"]
 }
 
+PACKAGE_ENERGY_COMPONENT_LABEL = ["package"]
+DRAM_ENERGY_COMPONENT_LABEL = ["dram"]
+CORE_ENERGY_COMPONENT_LABEL = ["core"]
+
+CATEGORICAL_LABEL_TO_VOCAB = {
+                    "cpu_architecture": ["Sandy Bridge", "Ivy Bridge", "Haswell", "Broadwell", "Sky Lake", "Cascade Lake", "Coffee Lake", "Alder Lake"],
+                    "node_info": ["1"],
+                    "cpu_scaling_frequency_hertz": ["1GHz", "2GHz", "3GHz"],
+                    }
+
+no_weight_trainers = ['PolynomialRegressionTrainer', 'GradientBoostingRegressorTrainer', 'KNeighborsRegressorTrainer', 'LinearRegressionTrainer','SVRRegressorTrainer', 'XgboostFitTrainer']
+weight_support_trainers = ['SGDRegressorTrainer', 'LogarithmicRegressionTrainer', 'LogisticRegressionTrainer', 'ExponentialRegressionTrainer']
+default_trainer_names = no_weight_trainers + weight_support_trainers
+default_trainers = ",".join(default_trainer_names)
+
+
 class FeatureGroup(enum.Enum):
-   Full = 1
-   WorkloadOnly = 2
-   CounterOnly = 3
-   CgroupOnly = 4
-   BPFOnly = 5
-   KubeletOnly = 6
-   IRQOnly = 7
-   CounterIRQCombined = 8
-   Unknown = 99
+    Full = 1
+    WorkloadOnly = 2
+    CounterOnly = 3
+    CgroupOnly = 4
+    BPFOnly = 5
+    IRQOnly = 6
+    CounterIRQCombined = 7
+    Basic = 8
+    BPFIRQ = 9
+    AcceleratorOnly = 10
+    ThirdParty = 11
+    Unknown = 99
+
+class EnergyComponentLabelGroup(enum.Enum):
+    PackageEnergyComponentOnly = 1
+    DRAMEnergyComponentOnly = 2
+    CoreEnergyComponentOnly = 3
+    PackageDRAMEnergyComponents = 4
 
 class ModelOutputType(enum.Enum):
     AbsPower = 1
     DynPower = 2
+
+def is_support_output_type(output_type_name):
+    return any(output_type_name == item.name for item in ModelOutputType)
 
 def deep_sort(elements):
     sorted_elements = elements.copy()
@@ -51,13 +81,122 @@ FeatureGroups = {
     FeatureGroup.CounterOnly: deep_sort(COUNTER_FEAUTRES),
     FeatureGroup.CgroupOnly: deep_sort(CGROUP_FEATURES),
     FeatureGroup.BPFOnly: deep_sort(BPF_FEATURES),
-    FeatureGroup.KubeletOnly: deep_sort(KUBELET_FEATURES),
-    FeatureGroup.IRQOnly: deep_sort(IRQ_FEATURES),
+    FeatureGroup.BPFIRQ: deep_sort(BPF_FEATURES + IRQ_FEATURES),
     FeatureGroup.CounterIRQCombined: deep_sort(COUNTER_FEAUTRES + IRQ_FEATURES),
+    FeatureGroup.Basic: deep_sort(BASIC_FEATURES),
+    FeatureGroup.AcceleratorOnly: deep_sort(ACCELERATE_FEATURES),
 }
 
+SingleSourceFeatures = [FeatureGroup.CounterOnly.name, FeatureGroup.CgroupOnly.name, FeatureGroup.BPFOnly.name, FeatureGroup.BPFIRQ.name]
+
+def is_single_source_feature_group(fg):
+    return fg.name in SingleSourceFeatures
+
+default_main_feature_map = {
+    FeatureGroup.Full: "cpu_instructions",
+    FeatureGroup.WorkloadOnly: "cpu_instructions",
+    FeatureGroup.CounterOnly: "cpu_instructions",
+    FeatureGroup.CgroupOnly: "cgroupfs_cpu_usage_us",
+    FeatureGroup.BPFOnly: "bpf_cpu_time_ms",
+    FeatureGroup.BPFIRQ: "bpf_cpu_time_ms",
+    FeatureGroup.CounterIRQCombined: "cpu_instructions",
+    FeatureGroup.Basic: "cpu_instructions",
+    FeatureGroup.AcceleratorOnly: "accelerator_intel_qat",
+}
+default_dram_feature_map = {
+    FeatureGroup.Full: "cache_miss",
+    FeatureGroup.WorkloadOnly: "cache_miss",
+    FeatureGroup.CounterOnly: "cache_miss",
+    FeatureGroup.CgroupOnly: "cgroupfs_memory_usage_bytes",
+    FeatureGroup.BPFOnly: "bpf_page_cache_hit",
+    FeatureGroup.BPFIRQ: "bpf_page_cache_hit",
+    FeatureGroup.CounterIRQCombined: "cache_miss",
+    FeatureGroup.Basic: "cache_miss"
+}
+
+def main_feature(feature_group_name, energy_component):
+    feature_group = FeatureGroup[feature_group_name]
+    features = FeatureGroups[feature_group]
+    if energy_component == "dram" and feature_group in default_dram_feature_map:
+        feature = default_dram_feature_map[feature_group]
+    else:
+        feature = default_main_feature_map[feature_group]
+    return features.index(feature)
+
+# XGBoostRegressionTrainType
+class XGBoostRegressionTrainType(enum.Enum):
+    TrainTestSplitFit = 1
+    KFoldCrossValidation = 2
+
+# XGBoost Model Feature and Label Incompatability Exception
+class XGBoostModelFeatureOrLabelIncompatabilityException(Exception):
+    """Exception raised when a saved model's features and label is incompatable with the training data. 
+    
+    ...
+
+    Attributes
+    ----------
+    expected_features: the expected model features
+    expected_labels: the expected model labels
+    actual_features: the actual model features
+    actual_labels: the actual model labels
+    features_incompatible: true if expected_features == actual_features else false 
+    labels_incompatible: true if expected_labels == actual_labels else false
+    """
+
+    expected_features: List[str]
+    expected_labels: List[str]
+    actual_features: List[str]
+    actual_labels: List[str]
+    features_incompatible: bool
+    labels_incompatible: bool
+
+
+    def __init__(self, expected_features: List[str], expected_labels: List[str], received_features: List[str], received_labels: List[str], message="expected features/labels are the not the same as the features/labels of the training data") -> None:
+        self.expected_features = expected_features
+        self.expected_labels = expected_labels
+        self.received_features = received_features
+        self.received_labels = received_labels
+        self.features_incompatible = self.expected_features != self.actual_features
+        self.labels_incompatible = self.expected_labels != self.actual_labels
+        self.message = message
+        super().__init__(self.message)
+
+
+# XGBoost missing Model or Model Desc Exception
+class XGBoostMissingModelXOrModelDescException(Exception):
+    """Exception raised when saved Model is either missing the trained XGBoost Model or the Model Description.
+
+    ...
+
+    Attributes
+    ----------
+    missing_model: model is missing
+    missing_model_desc: model_desc is missing
+    """
+
+    missing_model: bool
+    missing_model_desc: bool
+
+    def __init__(self, missing_model: bool, missing_model_desc: bool, message="model is missing xor model_description is missing") -> None:
+        self.missing_model = missing_model
+        self.missing_model_desc = missing_model_desc
+        self.message = message
+        super().__init__(self.message)
+
+
+EnergyComponentLabelGroups = {
+    EnergyComponentLabelGroup.PackageEnergyComponentOnly: deep_sort(PACKAGE_ENERGY_COMPONENT_LABEL),
+    EnergyComponentLabelGroup.DRAMEnergyComponentOnly: deep_sort(DRAM_ENERGY_COMPONENT_LABEL),
+    EnergyComponentLabelGroup.CoreEnergyComponentOnly: deep_sort(CORE_ENERGY_COMPONENT_LABEL),
+    EnergyComponentLabelGroup.PackageDRAMEnergyComponents: deep_sort(PACKAGE_ENERGY_COMPONENT_LABEL + DRAM_ENERGY_COMPONENT_LABEL)
+
+}
+
+all_feature_groups = [fg.name for fg in FeatureGroups.keys()]
+
 def get_feature_group(features):
-    sorted_features = sort_features(features)
+    sorted_features = deep_sort(features)
     for g, g_features in FeatureGroups.items():
         print(g_features, features)
         if sorted_features == g_features:
