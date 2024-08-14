@@ -12,7 +12,7 @@ sys.path.append(extractor_path)
 isolator_path = os.path.join(os.path.dirname(__file__), 'isolator')
 sys.path.append(isolator_path)
 
-from profiler.node_type_index import NodeTypeIndexCollection
+from node_type_index import NodeTypeIndexCollection
 from extractor import DefaultExtractor
 from isolator import MinIdleIsolator
 

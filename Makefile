@@ -11,6 +11,7 @@ CTR_CMD = docker
 
 DOCKERFILES_PATH := ./dockerfiles
 MODEL_PATH := ${PWD}/tests/models
+MACHINE_SPEC_PATH := ${PWD}/tests/data/machine_spec
 
 build:
 	$(CTR_CMD) build -t $(IMAGE) -f $(DOCKERFILES_PATH)/Dockerfile .
@@ -45,8 +46,9 @@ run-collector-client:
 	$(CTR_CMD) exec estimator /bin/bash -c "while [ ! -S "/tmp/estimator.sock" ]; do sleep 1; done; python3.10 -u ./tests/estimator_power_request_test.py"
 
 clean-estimator:
-	$(CTR_CMD) stop estimator
-	$(CTR_CMD) rm estimator
+	@$(CTR_CMD) logs estimator
+	@$(CTR_CMD) stop estimator
+	@$(CTR_CMD) rm estimator
 
 test-estimator: run-estimator run-collector-client clean-estimator
 
@@ -59,6 +61,7 @@ run-estimator-client:
 	$(CTR_CMD) exec model-server /bin/bash -c "python3.10 -u ./tests/estimator_model_request_test.py"
 
 clean-model-server:
+	@$(CTR_CMD) logs model-server
 	@$(CTR_CMD) stop model-server
 	@$(CTR_CMD) rm model-server
 
@@ -77,6 +80,27 @@ clean-offline-trainer:
 	@$(CTR_CMD) rm offline-trainer
 
 test-offline-trainer: run-offline-trainer run-offline-trainer-client clean-offline-trainer
+
+# test model server select
+create-container-net:
+	@$(CTR_CMD) network create kepler-model-server-test
+
+run-model-server-with-db:
+	$(CTR_CMD) run -d --platform linux/amd64 -p 8100:8100 --network kepler-model-server-test --name model-server $(TEST_IMAGE) /bin/bash -c "python3.10 src/server/model_server.py"
+	while ! docker logs model-server | grep -q Serving; do   echo "waiting for model-server to serve";  sleep 5; done
+
+run-estimator-with-model-server:
+	$(CTR_CMD) run -d --platform linux/amd64 -e PYTHONUNBUFFERED=1 -e "MACHINE_ID=test" -v ${MACHINE_SPEC_PATH}:/etc/machine_spec --network kepler-model-server-test -e "MODEL_SERVER_ENABLE=true" -e "MODEL_SERVER_URL=http://model-server:8100" --name estimator $(TEST_IMAGE) /bin/bash -c "python3.10 src/estimate/estimator.py"
+
+clean-container-net:
+	@$(CTR_CMD) network rm kepler-model-server-test
+
+run-select-client:
+	$(CTR_CMD) exec model-server /bin/bash -c "python3.10 -u ./tests/model_select_test.py"
+
+test-model-server-select: create-container-net run-model-server-with-db run-select-client clean-model-server clean-container-net
+
+test-model-server-estimator-select: create-container-net run-model-server-with-db run-estimator-with-model-server run-collector-client clean-estimator clean-model-server clean-container-net
 
 test: build-test test-pipeline test-estimator test-model-server test-offline-trainer
 

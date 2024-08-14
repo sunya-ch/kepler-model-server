@@ -250,6 +250,23 @@ Optional arguments:
  - isolators: dict map of isolator class name to argument dict map (default: {"MinIdleIsolator": {}, "NoneIsolator": {}, "ProfileBackgroundIsolator": {}, "TrainIsolator": {"abs_pipeline_name": default_train_output_pipeline}})
  - target_path:  path to save trained ouput (default: data/offline_trainer_output)
 
+## Server API
+The test is for testing server model selection API.
+
+Requirements:
+- server running
+
+    ```bash
+    # create new model folder
+    mkdir -p $(pwd)/db-models
+    MODEL_PATH=$(pwd)/db-models python ../src/server/model_server.py
+    ```
+
+Run:
+```bash
+python model_select_test.py
+```
+
 # Integration Test
 
 ```bash

@@ -54,7 +54,7 @@ def load_json(path, name):
         with open(filepath) as f:
             res = json.load(f)
         return res
-    except Exception as err:
+    except:
         return None
     
 def load_pkl(path, name):
@@ -77,6 +77,17 @@ def load_remote_pkl(url_path):
         response = urlopen(url_path)
         loaded_model = joblib.load(response)
         return loaded_model
+    except:
+        return None
+    
+def load_remote_json(url_path):
+    if ".json" not in url_path:
+        url_path = url_path + ".json"
+    try:        
+        response = urlopen(url_path)
+        response_data = response.read().decode('utf-8')
+        json_data = json.loads(response_data)
+        return json_data
     except:
         return None
     
